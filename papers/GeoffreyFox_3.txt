@@ -1,0 +1,218 @@
+Parallel Data Mining from Multicore to
+Cloudy Grids
+Abstract. We describe a suite of data mining tools that cover clustering,
+information retrieval and the mapping of high dimensional data to low dimensions
+for visualization. Preliminary applications are given to particle physics,
+bioinformatics and medical informatics. The data vary in dimension from low (2-
+20), high (thousands) to undefined (sequences with dissimilarities but not vectors
+defined). We use deterministic annealing to provide more robust algorithms that
+are relatively insensitive to local minima. We discuss the algorithm structure and
+their mapping to parallel architectures of different types and look at the
+performance of the algorithms on three classes of system; multicore, cluster and
+Grid using a MapReduce style algorithm. Each approach is suitable in different
+application scenarios. We stress that data analysis/mining of large datasets can be
+a supercomputer application.
+Keywords. MPI, MapReduce, CCR, Performance, Clustering, Multidimensional
+Scaling
+Introduction
+Computation and data intensive scientific data analyses are increasingly prevalent. In
+the near future, data volumes processed by many applications will routinely cross the
+peta-scale threshold, which would in turn increase the computational requirements.
+Efficient parallel/concurrent algorithms and implementation techniques are the key to
+meeting the scalability and performance requirements entailed in such scientific data
+analyses. Most of these analyses can be thought of as a Single Program Multiple Data
+(SPMD) [1] algorithms or a collection thereof. These SPMDs can be implemented
+using different parallelization techniques such as threads, MPI [2], MapReduce [3], and
+mash-up [4] or workflow technologies [5] yielding different performance and usability
+characteristics. In some fields like particle physics, parallel data analysis is already
+commonplace and indeed essential. In others such as biology, data volumes are still
+such that much of the work can be performed on sequential machines linked together
+by workflow systems such as Taverna [6]. The parallelism currently exploited is
+usually the “almost embarrassingly parallel” style illustrated by the independent events in particle physics or the independent documents of information retrieval – these lead
+to independent “maps” (processing) which are followed by a reduction to give
+histograms in particle physics or aggregated queries in web searches. MapReduce is a
+cloud technology that was developed from the data analysis model of the information
+retrieval field and here we combine this cloud technique with traditional parallel
+computing ideas. The excellent quality of service (QoS) and ease of programming
+provided by the MapReduce programming model is attractive for this type of data
+processing problem. However, the architectural and performance limitations of the
+current MapReduce architectures make their use questionable for many applications.
+These include many machine learning algorithms [7, 8] such as those discussed in this
+paper which need iterative closely coupled computations. Our results find poor results
+for MapReduce on many traditional parallel applications with an iterative structure in
+disagreement with earlier papers [7]. In section 2 we compare various versions of this
+data intensive programming model with other implementations for both closely and
+loosely coupled problems. However, the more general workflow or dataflow paradigm
+(which is seen in Dryad [9] and other MapReduce extensions) is always valuable. In
+sections 3 and 4 we turn to some data mining algorithms that require parallel
+implementations for large data sets; interesting both sections see algorithms that scale
+like N 2 (N is dataset size) and use full matrix operations. Our algorithms are parallel MDS (Multi dimensional scaling) [10] and clustering.
+The latter has been discussed earlier by us [11-15] but here we extend our results to
+larger systems – single workstations with 16 and 24 cores and a 128 core (8 nodes with
+16 cores each) cluster described in table 1. Further we study a significantly different
+clustering approach that only uses pairwise distances (dissimilarities between points)
+and so can be applied to cases where vectors are not easily available. This is common
+in biology where sequences can have mutual distances determined by BLAST like
+algorithms but will often not have a vector representation. Our MDS algorithm also
+only uses pairwise distances and so it and the new clustering method can be applied
+broadly. Both our original vector-based (VECDA) and the new pairwise distance
+(PWDA) clustering algorithms use deterministic annealing to obtain robust results.
+VECDA was introduced by Rose and Fox almost 20 years ago [16] and has obtained
+good results [17] and there is no clearly better clustering approach. The pairwise
+extension PWDA was developed by Hofmann and Buhmann [18] around 10 years ago
+but does not seem to have used in spite of its attractive features – robustness and
+applicability to data without vector representation. We complete the algorithm and
+present a parallel implementation in this paper.
+As seen in table 1, we use both Linux and Windows platforms in our multicore and
+our work uses a mix of C#, C++ and Java. Our results study three variants of
+MapReduce, threads and MPI. The algorithms are applied across a mix of paradigms to
+study the different performance characteristics.
+4.4. Parallelism
+The vector clustering model is suitable for low dimensional spaces such as our
+earlier work on census data [12] but the results of figures 11, 14 and 15 correspond to
+our implementation of PWDA – the pairwise distance clustering approach of [18]
+which starts from equation (4.2) and its structure has similarities to familiar O(N 2 )
+problems such as (astrophysical) particle dynamics. As N is potentially of order a
+million we see that both MDS and pairwise clustering are potential supercomputing
+data analysis applications. The parallelism for clustering is straightforward data
+parallelism with the N points divided equally between the P parallel units. This is the
+basis of most MapReduce algorithms and clustering was proposed as a MapReduce
+application in [7]. We have in fact compared simple (K-means) clustering between
+versions and MapReduce and MPI in section 2 and ref. [28]. Note that VECDA should
+be more suitable than K-means for MapReduce as it has more computation at each
+iteration (MapReduce has greater overhead than MPI on communication and
+synchronization as shown in section 2). VECDA only uses reduction, barrier and
+broadcast operations in MPI and in fact MPI implementation of this algorithm is
+substantially simpler than the threaded version. Reduction, Barrier and Broadcast are
+all single statements in MPI but require several statements – especially for reduction –
+in the threaded case. Reduction is not difficult in threaded case but requires care with
+many opportunities for incorrect or inefficient implementations.
+PWDA is also data parallel over points and its O(N 2 ) structure is tackled similarly
+to other O(N 2 ) algorithms by dividing the points between parallel units. Each MPI
+process also stores the distances D(i, j) for all points i for which process is responsible.
+Of course the threads inside this process can share all these distances stored in common
+memory of a multicore node. There are subtle algorithms familiar from N-body particle
+dynamics where a factor of 2 in storage (and in computation) is saved by using thesymmetry D(i, j) = D(j, i) but this did not seem useful in this case. The MPI parallel
+algorithm now needs MPI_SENDRECV to exchange information about the distributed
+vectors; i.e. one needs to know about all components of vectors M i B i and the vector A i
+iterated in finding maximal eigenvectors. This exchange of information can either be
+done with a broadcast or as in results reported here by send-receive in ring structure as
+used in O(N 2 ) particle dynamics problems. We measured the separate times in the four
+components of MPI – namely send-receive, Reduction, and Broadcast and only the first
+two are significant reaching 5-25% of total time with Broadcast typically less than
+0.1% of execution time. The time needed for MPI send-receive is typically 2 to 3 times
+that for reduction but the latter is a non trivial overhead (often 5-10%). Obviously
+broadcast time would go up if it was used in place of send-receive in information
+exchange step.
+4.5. Computational Complexity
+The vector and pairwise clustering methods have very different and
+complementary computational complexities. VECDA execution time is proportional to
+N d 2 for N points – each of dimension d. PWDA has an execution time proportional to
+N 2 . PWDA can rapidly become a supercomputer computation. For example with 4500
+sequence data points and 8 clusters, the sequential execution time is about 15 hours on
+a single core of the systems used in our benchmarks. A direct clustering with PWDA of
+half million points (relevant even today) would thus naturally use around 5000 cores
+(100 points per core) with pure MPI parallelization. The hybrid threading-MPI
+parallelism could efficiently support more cores.
+We note that currently some 40-70% of the computation time is used in deciding
+whether to split clusters in PWDA; there are probably significantly faster algorithms
+here. The runs of VECDA reported here correspond to a low dimension space d = 2 for
+which negligible time is spent in splitting decision. The second derivative matrices are
+of size NK×NK for PWDA and of size dK×dK for VECDA. These are full matrices but
+as power method for determining maximal eigenvalues is used the computation is
+proportional to to the square of the matrix dimension. For computations reported here,
+the annealing uses from 1000-10,000 temperature steps while each eigenvalue
+determination uses 10-200 iterations.
+4.6. Performance
+We have performed extensive performance measurements [11-14] showing the
+effect of cache and for Windows runtime fluctuations can be quite significant. Here we
+give some typical results with figure 15 showing the performance of PWDA on the
+single 24 core workstation (ref D of table 1). The results are expressed as an overhead
+using the definitions of equation (1) introduced in section 2. We compare both MPI and
+thread based parallelism using Microsoft’s CCR package [20-21]. As these codes are
+written in C#, we use MPI.NET[35-36] finding this to allow an elegant object-based
+extension of traditional MPI and good performance. MPI.NET is a wrapper for the
+production Microsoft MPI.
+Figure 16 shows that although threading and MPI both get good performance, their
+systematics are different. For the extreme case of 24-way parallelism, the thread
+implementation shows an overhead that varies between 10 and 20% depending on the
+data set size. MPI shows a large overhead for small datasets that decreases withincreasing dataset size so in fact 24-way MPI parallelism is 20% faster than the thread
+version on the largest 10,000 element dataset. This is due to the different sources of the
+overhead. For MPI the overhead is due to the communication calls which are due to
+reduce (20%) and send-receive (80%) and this as expected decreases (inversely
+proportional to dataset size) as the dataset size increases. For threads there is no
+memory movement overhead but rather the overhead is due to the Windows thread
+scheduling that leads to large fluctuations that can have severe effects on tightly
+synchronized parallel codes such as those in this paper as discussed in refs. [11-14].
+We see some cases where the overhead is negative (super-linear speedup) which is due
+to better use of cache in the higher parallelism cases compared to sequential runs. This
+effect is seen in all our runs but differs between the AMD and Intel architectures
+reflecting their different cache size and architecture. Comparing center and right datasets we see that MPI gets comparable performance
+on cores of a single node (center points) or when running one process per node on up to
+24 nodes of the Infiniband connected cluster. In the results plotted in the figure. MPI
+gets better performance (smaller overhead) than threading on the largest 10,000
+element Patient dataset. This reflects the large chunks of processing per MPI process.
+As seen in figure this is not always the case as threading outperforms MPI on the 2000
+and 4000 element datasets for largest 24-way parallelism. As a dramatic example using
+all 768 cores of Tempest (ref I Table 1), the pattern 24X1X32 (24 threads on each of 32nodes connected as 32 MPI processes) runs 172 times faster than the communication
+dominated 1X24X32 (24 internal MPI processes on each of 32 nodes). The fluctuations in thread execution times are illustrated in figure 17 showing
+standard deviations from 5 to 10% on a simple kernel representative of the VECDA
+clustering algorithm. The identical code (translated from C# to C) shows order of
+magnitude lower fluctuations when run under Linux [13] with interesting systematics
+even in Linux case. These fluctuations can give significant parallel overheads as
+parallel algorithms used in VECDA and PWDA like those in most scientific algorithms
+requires iterative thread synchronization at the rendezvous points. Here the execution
+time will be the maximum over that of all the simultaneous fluctuating threads and so
+increase as this number increases. As described in the earlier papers we have always
+seen this and reported this effect to Microsoft. We found that these fluctuations were
+the only sizeable new form of parallel overhead compared to those well known from
+traditional parallel computing i.e. in addition to load imbalance and communication
+overhead. We did note extra overheads due to different threads interfering on a single
+cache line (“false sharing”) but our current software is coded to avoid this. Note that the fluctuation effect is larger in the work reported here compared to our
+previous papers as we are looking here at many more simultaneous threads. Note that
+the effect does not just reflect the number of threads per process but also the total
+number of threads because the threads are synchronized not just within a process but
+between all processes as MPI calls will synchronize all the threads in the job. Thus it is
+interesting to examine this effect on the full 128 core Madrid cluster as this could even
+be a model for performance of future much larger core individual workstations.
+We note that VECDA and PWDA differ somewhat in their performance
+characteristics. VECDA only uses modest size reductions (dominant use), broadcast
+and barrier MPI operations and so has particularly fast MPI synchronization. PWDA
+also has MPI_SENDRECV (exchange of data between processes) which increases the
+MPI synchronization time. Thus VECDA shown in figures 18 and 19 tends always to
+have MPI at least as fast as CCR and in some cases very much faster. Figure 18 shows
+the parallel overhead for 44 different choices of nodes (from 1 to 8), MPI processes per
+node (from 1 to 16) and threads per node (from 1 to 16 divided between the MPI
+processes per node). The results are divided into groups corresponding to a given total
+parallelism. For each group, the number of threads increases as we move from left to
+right. For example in the 128 way parallel group, there are five entries with the leftmost
+being 16 MPI processes per node on 8 nodes (a total of 128 MPI processes) and the
+rightmost 16 threads on each of 8 nodes (a total of 8 MPI processes). We find an
+incredibly efficient pure MPI version – an overhead of just 0.08 (efficiency 92%) for
+128 way parallelism whereas the rightmost case of 16 threads has a 0.63 overhead
+(61% efficiency). All cases with 16 threads per node show a high overhead that slowly
+increases as the node count increases. For example the case of 16 threads on one node
+has an overhead of 0.51. Note that in this we use scaled speedup i.e. the problem size
+increases directly according to number of parallel units. This ensures that the inner
+execution scenarios are identical in all 44 cases reported in figure 18. We achieve
+scaled datasets by replicating a base point set as one can easily see that leads to same
+mathematical problem but with a work that increases properly as number of execution
+units increases.
+Figure 19 looks again at the vector clustering VECDA comparing MPI versus two
+versions of threading. MPI is again very efficient – the 32 way parallel code with 16
+MPI processes on each of two 16 core nodes has overheads (given by equation (1) and
+roughly 1 – efficiency) of 0.05 to 0.10. For the case of 16 threads on each of two nodes
+the overhead is 0.65 (short lived) to 1.25 (long lived) threads. The short lived threads
+are the natural implementation with threads spawned for parallel for loops. In the long
+lived case, the paradigm is similar to MPI with long running threads synchronizing
+with rendezvous semantics.
+5. Conclusions
+This paper has addressed several issues. It has studied the performance of a variety of
+different programming models on data intensive problems. It has presented novel
+clustering and MDS algorithms which are shown to parallelize well and could become
+supercomputer applications for large million point problems. It has compared MPI and
+threading on multicore systems showing both to be effective but with different
+overheads. We see these complemented by the data intensive programming models
+including Dryad and Hadoop as well as an in house version of MapReduce. Thesesupport an “owner stores and computes” programming paradigm that will be of
+increasing importance.
+

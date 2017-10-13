@@ -1,0 +1,15 @@
+Bivariate Polynomials Modulo Composites
+and their Applications
+Abstract. We investigate the hardness of finding solutions to bivariate
+polynomial congruences modulo RSA composites. We establish necessary
+conditions for a bivariate polynomial to be one-way, second preimage re-
+sistant, and collision resistant based on arithmetic properties of the poly-
+nomial. From these conditions we deduce a new computational assump-
+tion that implies an efficient algebraic collision-resistant hash function.
+We explore the assumption and relate it to known computational prob-
+lems. The assumption leads to (i) a new statistically hiding commitment
+scheme that composes well with Pedersen commitments, (ii) a conceptu-
+ally simple cryptographic accumulator, and (iii) an efficient chameleon
+hash function.
+Keywords: algebraic curves, bivariate polynomials, cryptographic com-
+mitments, Merkle trees

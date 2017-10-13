@@ -1,0 +1,428 @@
+Stochastic Superoptimization
+We formulate the loop-free, binary superoptimization task
+as a stochastic search problem. The competing constraints
+of transformation correctness and performance improvement
+are encoded as terms in a cost function, and a Markov Chain
+Monte Carlo sampler is used to rapidly explore the space of
+all possible programs to find one that is an optimization of a
+given target program. Although our method sacrifices completeness, the scope of programs we are able to reason about,
+and the quality of the programs we produce, far exceed those
+of existing superoptimizers. Beginning from binaries compiled by llvm -O0 for 64-bit X86, our prototype implemen-
+tation, STOKE, is able to produce programs which either
+match or outperform the code sequences produced by gcc
+with full optimizations enabled, and, in some cases, expert
+handwritten assembly.
+For many application domains there is considerable value
+in producing the most performant code possible. Unfortunately, the traditional structure of a compiler’s optimization
+phase is often ill-suited to this task. Attempting to factor
+the optimization problem into a collection of small subprob-
+lems that can be solved independently, although suitable for 
+generating consistently good code, leads to the well-known
+phase ordering problem. In many cases, the best possible
+code can only be obtained through the simultaneous consideration of mutually dependent issues such as instruction se-
+lection, register allocation, and target-dependent optimization.
+Previous approaches to this problem have focused on the
+exploration of all possibilities within some limited class of
+programs. In contrast to a traditional compiler, which uses
+performance constraints to drive code generation of a single
+program, these systems consider multiple programs and then
+ask how well they satisfy those constraints. Solutions range
+from the explicit enumeration of a class of programs that
+can be formed using a large executable hardware instruction
+set [3] to implicit enumeration through symbolic theorem
+proving techniques of programs over some restricted register
+transaction language [14, 11, 9].
+An attractive feature of these systems is completeness: If
+a program exists meeting the desired constraints, that program will be found. Unfortunately, completeness also places
+limitations on the space of programs that can be effectively
+reasoned about. Because of the huge number of programs involved explicit enumeration-based techniques are limited to
+programs up to some fixed length, and currently this bound
+is well below the threshold at which many interesting optimizations take place. Implicit enumeration techniques can
+overcome this limitation, but at the cost of expert-written
+rules for shrinking the search space. The resulting optimizations are as good, but no better, than the quality of the rules
+written by an expert.
+To overcome these limitations we take a different approach
+based on incomplete search. We show how the competing requirements of correctness and speed can be defined as terms
+in a cost function over the complex search space of all loopfree executable hardware instruction sequences, and how the
+program optimization problem can be formulated as a cost
+minimization problem. Although the resulting search space
+is highly irregular and not amenable to exact optimization
+techniques, we demonstrate that the common approach of
+employing a Markov Chain Monte Carlo (MCMC) sampler
+to explore the function and produce low-cost samples is sufficient for producing high quality code sequences.
+Although our technique sacrifices completeness by trading
+systematic enumeration for stochastic search, we show that
+we are able to dramatically increase the space of programs
+that our system can reason while simultaneously improving the quality of the code produced. Consider the exam-
+ple code shown in Figure 1, the Montgomery multiplication
+kernel from the OpenSSL big number library for arbitrary
+precision integer arithmetic. Beginning with a binary compiled by llvm -O0 (116 lines, not shown), we are able to
+produce a program which is 16 lines shorter and 1.6 times
+faster than the code produced by gcc with full optimizations
+enabled. Most interestingly, the code that our method finds
+uses a different assembly level algorithm than the original,
+and is slightly better than the expert handwritten assembly code included with the OpenSSL repository. The code
+is discovered automatically, and is automatically verified to
+be equivalent to the original llvm -O0 code. To the best of
+our knowledge, the code is truly optimal: it is the fastest
+program for this function written in the 64-bit X86 instruction set (the strange looking mov edx, edx produces the
+non-obvious but necessary side effect of zeroing the upper
+32 bits of rdx).
+To summarize, our work makes a number of contributions
+that have not previously been demonstrated. The remainder
+of this paper explores each in turn. Section 2 summarizes
+previous work in superoptimization and discusses its limitations. Section 3 presents a mathematical formalism for
+transforming the program optimization task into a stochastic cost minimization problem. Section 4 discusses how that
+theory is applied in a system for optimizing the runtime performance of 64-bit X86 binaries, and Section 5 describes our
+prototype implementation, STOKE. Finally, Section 6 evaluates STOKE on a set of benchmarks drawn from cryptog-
+raphy, linear algebra, and low-level programming, and shows
+that STOKE is able to produce code that either matches or
+outperforms the code produced by production compilers.
+RELATED WORK
+Previous approaches to superoptimization have focused
+on the exploration of all possibilities within some restricted
+class of programs. Although these systems have been demonstrated to be quite effective within certain domains, their
+general applicability has remained limited. We discuss these
+limitations in the context of the Montgomery multiplication
+kernel shown in Figure 1.
+The high-level organization of the code is as follows: Two
+32-bit values, ecx and edx, are concatenated and then multiplied by the 64-bit rsi to produce a 128-bit value. Two
+64-bit values, rdi and r8 are added to that product, and the
+result is written to two registers: the upper half to r8, and
+the lower half to rdi. The primary source of optimization is
+best demonstrated by comparison. The code produced by
+gcc -O3, Figure 1(left), performs the 128-bit multiplication
+as four 64-bit multiplications and then combines the results;
+the rewrite produced by STOKE, Figure 1(right), uses a
+hardware intrinsic to perform the multiplication in a single
+step.
+Massalin’s original paper on superoptimization [14] describes a system that explicitly enumerates sequences of code
+of increasing length and selects the first such code identical
+to the input program on a set of testcases. Massalin reported being able to optimize instruction sequences of up to
+length 12, however to do so, it was necessary to restrict the
+set of enumerable opcodes to between 10 and 15. The 11
+instruction kernel produced by STOKE in Figure 1 is found
+by considering a large subset of the nearly 400 64-bit X86
+opcodes, some of which have as many as 10 variations. It is
+unlikely that Massalin’s approach would scale to an instruction set of this magnitude.
+Denali [11], and the more recent Equality Saturation tech-
+nique [18], attempt to gain scalability by only considering
+programs that are known to be equal to the input program.
+Candidate programs are explored through successive application of equality preserving transformation axioms. Be-
+cause it is goal-directed this approach dramatically improves
+both the number of primitive instructions and the length of
+programs that can be considered, but it also relies heavily
+on expert knowledge. It is unclear whether an expert would
+know a priori to encode an equality axiom defining the multiplication transformation discovered by STOKE. More generally, it is unlikely that a set of expert written rules would
+ever cover the set of all interesting optimizations. It is worth
+noting that these techniques can to a certain extent deal with
+loop optimizations, while other techniques, including ours,
+are limited to loop-free code.
+Bansal [3] describes a system that automatically enumerates 32-bit X86 superoptimizations and stores the results
+in a database for later use. By exploiting symmetries between programs that are equivalent up to register renaming,
+Bansal was able to scale this method to optimizations taking input code sequences of at most length 6 and producing
+code sequences of at most length 3. This approach has the
+dual benefit of hiding the high cost of superoptimization by
+performing a search once and for all offline and eliminating the dependence on expert knowledge. To some extent,
+the low cost of performing a database query allows the system to overcome the low upper bound on instruction length
+through the repeated application of the optimizer along a
+sliding code window. However, the Montgomery multiplication kernel has the interesting property shared by many
+real world codes that no sequence of short superoptimizations will transform the code produced by gcc -O3 into the
+code produced by STOKE. We follow Bansal’s approach in
+overall system architecture, using testcases to help classify
+programs as promising or not and eventually submitting the
+most promising candidates to a verification engine to prove
+or refute their correctness.
+More recently both Sketching [17] and Brahma [9] have
+made progress in addressing the closely related componentbased program synthesis problem. These systems rely on
+either a declarative program specification, or a user-specified
+partial program, and operate on statements in bit-vector
+calculi rather than directly on hardware instructions. Liang
+[13] considers the task of learning programs from testcases
+alone, but at a similarly high level of abstraction. Although
+useful for synthesizing results, the internal representations
+used by these system preclude them from reasoning directly
+about the runtime performance of the resulting code.
+STOKE differs from previous approaches to superoptimization by relying on incomplete stochastic search. In doing so, it makes heavy use of Markov Chain Monte Carlo
+(MCMC) sampling to explore the extremely high dimensional, irregular search space of loop-free assembly programs.
+For many optimization problems of this form, MCMC sampling is the only known general solution method which is
+also tractable. Successful applications are many, and include protein alignment [16], code breaking [7], and scene
+modeling and rendering in computer graphics [19, 6].
+COST MINIMIZATION
+To cast program optimization as a cost minimization problem, it is necessary to define a cost function with terms
+that balance the hard constraint of correctness preservation
+and the soft constraint of performance improvement. The
+primary advantage of this approach is that it removes the
+burden of reasoning directly about the mutually-dependent
+optimization issues faced by a traditional compiler. For instance, rather than consider the interaction between register
+allocation and instruction selection, we might simply define
+a term to encode the primary consequence: expected run-
+time. Having done so, we may then utilize a cost minimization search procedure to discover a program that balances
+those issues as effectively as possible. We simply run the
+procedure for as long as we like, and select the lowest-cost
+result which has satisfied all of the hard constraints.
+In formalizing this idea, we make use of the following notation. We refer to the input program as the target (T )
+and a candidate compilation as a rewrite (R), we say that
+a function f (X; Y ) takes inputs X and is parameterized by
+Y , and finally, we define the indicator function for boolean
+variables.
+Cost Function
+Although we have considerable freedom in defining a cost
+function, at the highest level, it should include two terms
+with the following properties:
+eq(·) is a correctness metric, measuring the similarity of
+two functions. The metric is zero if and only if the two
+functions are equal. For our purposes, two code sequences
+are regarded as functions of registers and memory contents,
+and are are equal if for all machine states that agree on
+the live inputs with the respect to the target, the two codes
+produce identical side effects on the live outputs with respect
+to the target. Because program optimization is undefined for
+ill-formed programs, it is unnecessary that eq(·) be defined
+for a target or rewrite producing some undefined behavior.
+However nothing prevents us from doing so, and it would be
+a straightforward extension to produce a definition of eq(·)
+which preserved hardware exception behavior as well.
+perf(·) quantifies the performance improvement of a rewrite
+with respect to the target. Depending on the application,
+this term could reflect code size, expected runtime, number
+of disk accesses, power consumption, or any other measure of
+resource usage. Crucially, the extent to which this term accurately reflects the performance improvement of a rewrite
+directly affects the quality of the results discovered by a
+search procedure.
+MCMC Sampling
+In general, we expect cost functions of the form described
+above to be highly irregular and not amenable to exact optimization techniques. The common approach to solving this
+problem is to employ the use of an MCMC sampler. Although a complete discussion of MCMC is beyond the scope
+of this paper, we summarize the main ideas here.
+MCMC is a technique for sampling from a probability
+density function in direct proportion to its value. That is,
+regions of higher probability are sampled more often than
+regions of low probability. When applied to cost minimization, it has the attractive property that in the limit the most
+samples will be taken from the minimum (optimal) value of
+the function. In practice, well before this limit behavior is
+observed, MCMC functions as an intelligent hill climbing
+method which is robust against irregular functions that are
+dense with local minima. A common method (described by
+[1]) for transforming an arbitrary cost function, c(·), into a
+probability density function is the following, where β is a
+constant and Z is a partition function that normalizes the
+distribution:
+Although computing Z is in general intractable, the Metropolis-Hastings algorithm for generating Markov chains is de-
+signed to explore density functions such as p(·) without the
+eed to compute the partition function [15, 10]. The basic
+idea is simple. The algorithm maintains a current rewrite
+R and proposes a modified rewrite R ∗ as the next step in
+the chain. The proposal R ∗ is either accepted or rejected.
+If the proposal is accepted, R ∗ becomes the current rewrite,
+otherwise another proposal based on R is generated. The algorithm iterates until its computational budget is exhausted,
+and so long as the proposals are ergodic (capable of transforming any point in the space to any other through some se-
+quence of steps) the algorithm will in the limit produce a sequence of samples with the properties described above (i.e.,
+in proportion to their cost). This global property depends
+on the local acceptance criteria of a proposal R → R ∗ , which
+is governed by the Metropolis-Hastings acceptance probability, where q(R ∗ |R) is the proposal distribution from which
+a new rewrite R ∗ is sampled given the current rewrite, R:
+This proposal distribution is key to a successful application of the algorithm. Empirically, the best results are ob-
+tained by a distribution which makes both local proposals
+that make minor modifications to R and global proposals
+that induce major changes. In the event that the proposal
+distributions are symmetric, q(R ∗ |R) = q(R|R ∗ ), the acceptance probability can be reduced to the much simpler
+Metropolis ratio, which can be computed directly from c(·):
+The important properties of the acceptance criteria are
+the following: If R ∗ is better (has a higher probability/lower
+cost) than R, the proposal is always accepted. If R ∗ is worse
+(has a lower probability/higher cost) than R, the proposal
+may still be accepted with a probability that decreases as a
+function of the ratio in value between R ∗ and R. This is the
+property that prevents the search from becoming trapped in
+local minima while remaining less likely to accept a move
+that is much worse than available alternatives.
+X86 BINARY OPTIMIZATION
+Having discussed program optimization as cost minimization in the abstract, we turn to the practical details of imple-
+menting cost minimization for optimizing the runtime performance of 64-bit X86 binaries. As 64-bit X86 is one of
+the most complex ISAs in production, we expect that the
+discussion in this section should generalize well to other architectures.
+For loop-free sequences of X86 assembly code, a natural
+choice for implementing the transformation correctness term
+is a symbolic validator such as the one used in [5]. For a
+candidate rewrite, the term may be defined in terms of an
+invocation of the validator as:
+Unfortunately, despite advances in the technology, the total number of validations that can be performed per second,
+even for modestly sized codes, is low. Figure 2 (left) suggests
+that for the benchmarks discussed in Section 6 the number
+is well below 100. Because MCMC is effective only insofar as
+it is able to explore sufficiently large numbers of proposals,
+the repeated computation of Equation 7 in its inner-most
+loop would almost certainly drive that number well below a
+useful threshold.
+This observation motivates the definition of an approximation to eq(·) based on testcases, τ . Intuitively, we run the
+proposal R ∗ on a set of inputs and measure “how close” the
+output is to the output of the target on those same inputs.
+For a given input, we use the number of bits difference in
+live outputs (i.e., the Hamming distance) to measure correctness. Besides being much faster than using a theorem
+prover, this approximation of program equivalence has the
+added advantage of producing a smoother landscape than
+the 0/1 output of a symbolic equality test—it provides a
+useful notion of “almost correct” that can help guide the
+search.
+tirely different region of the search space. As noted earlier,
+it has the property that no sequence of small equality preserving transformations connect it to either the llvm -O0
+or the gcc -O3 code. It represents a completely distinct
+algorithm for implementing the Montgomery multiplication
+kernel at the assembly level. The only method we know of
+for a local search procedure to transform either code into
+the expert code is to traverse the extremely low probability
+path that builds the expert code in place next to the original,
+all the while increasing its cost, only to delete the original
+code at the very end. Although MCMC is guaranteed to
+traverse this path in the limit, the likelihood of it doing so
+in any reasonable amount of time is so low as to be useless
+in practice.
+This observation motivates dividing the cost minimization
+into two phases:
+appropriate types. The UNUSED token is proposed with
+probability p u .
+These definitions satisfy the ergodicity property described
+in Section 3.2. Any program can be transformed into any
+other through repeated application of Instruction moves.
+These definitions also satisfy the symmetry property, and
+thus allow the computation of acceptance probability using
+Equation 6. To see why, note that the probabilities of performing all four moves types are equal to the probabilities
+of undoing the transformations they produce using a move
+of the same type. The opcode and operand moves are constrained to sample from identical equivalence classes before
+and after acceptance. Similarly, the swap and instruction
+moves are equally unconstrained in both directions.
+4.4
+• A synthesis phase focused solely on correctness, which
+attempts to locate regions of equal programs distinct
+from the region occupied by the target.
+Separating Synthesis From Optimization
+An early implementation of STOKE, based on the above
+principles, was able to consistently transform llvm -O0 code
+into the equivalent of gcc -O3 code. Unfortunately, it was
+rarely able to produce code competitive with expert handwritten code. The reason is suggested by Figure 4, which
+gives an abstract depiction of the search space for the Montgomery multiplication benchmark. For loop-free sequences
+of code, llvm -O0 and gcc -O3 codes differ primarily with
+respect to efficient use of the stack and choices of individual instructions. Yet despite these differences, the resulting
+codes are algorithmically quite similar. To see this, note that
+compiler optimizers are generally designed to compose many
+small local transformations: dead code elimination deletes
+one instruction, constant propagation changes one register
+to an immediate, strength reduction replaces a multiplication with an add. With respect to the search space, such
+sequences of local optimizations occupy a region of equivalent programs that are densely connected by very short
+sequences of moves (often a single move) that is easily traversed by a local search method. Beginning from llvm -O0
+code, a random search method will quickly identify local inefficiencies one by one, improve them in turn, and hill climb
+its way to a gcc -O3 code.
+The expert code discovered by STOKE occupies an optimization phase focused on speed, which searches
+for the fastest program within each of those regions.
+The two phases share the same search implementation;
+only the starting point and the acceptance functions are different. Synthesis begins with a random starting point (a
+sequence of randomly chosen instructions), while optimization begins with a code sequence known to be equivalent to
+the target. For proposals, synthesis ignores the performance
+improvement term altogether and simply uses Equation 12
+as its cost function. Optimization uses both terms, allowing
+it to measure improvement while also allowing it to experiment with “shortcuts” that (temporarily) violate transformation correctness.
+It is not intuitive that a randomized search procedure
+should synthesize a correct rewrite from such an enormous
+search space in a short amount of time. In our experience,
+the secret is that synthesis is effective precisely when it is
+possible to discover parts of a correct rewrite incrementally,
+as opposed to all at once. Figure 8 plots the current best cost
+obtained during synthesis against the percentage of instructions appearing in both that rewrite and the final correct
+search proceeds, the percentage of correct code increases in
+inverse proportion to the value of the cost function. While
+this is very encouraging and there are many programs that
+satisfy the property that they can be synthesized in pieces,
+each of which increases the average number of correct bits
+in the output, there are certainly interesting programs that
+do not have this property. In the limit, any code performing
+a complex computation that is reduced to a single boolean
+value poses a problem for our approach. The discovery of
+partially correct computations is useful as a guide for random search only insofar as they are able to produce a partially correct result, which can be detected by a cost function.
+This observation motivates the desire for a cost function
+which maximizes the signal produced by a partially correct
+rewrite. We discussed a successful application of this principle in Section 4.6. Nonetheless, there remains room for improvement. Consider the program which rounds its inputs
+up to the next highest power of two. This program has the
+interesting property that it differs from the program which
+simply returns zero in only one bit per testcase. The improved cost function discussed above assigns a very low cost
+to the constant zero function, which although almost correct is completely wrong, and exhibits no partially correct
+computations that can be hill-climbed to a correct rewrite.
+Fortunately, we note that even when synthesis fails, optimization is still possible. It must simply proceed only from
+the region occupied by the target as a starting point.
+STOKE is a prototype implementation of the concepts described in this paper with high-level design shown in Figure
+9. A user provides a target binary which was created using
+a production compiler (in our case, llvm -O0); in the event
+that the target contains loops, STOKE identifies loop-free
+subsequences of the code which it will attempt to optimize.
+The user also provides an annotated driver in which the target is called in an appropriate context. Based on the user’s
+annotations, STOKE automatically generates random inputs to the target, compiles the driver, and then runs the
+code under instrumentation to produce testcases. The target and testcases are broadcast to a small cluster of synthesis
+threads which after a fixed amount of time report back candidate rewrites. In like fashion, a small cluster performs
+optimization on both the target and those rewrites. Finally,
+the set of rewrites with a final cost that is within 20% of the
+minimum are re-ranked based on actual runtime, and the
+best is returned to the user.
+STOKE is a prototype implementation of the concepts de-
+scribed in this paper with high-level design shown in Figure
+9. A user provides a target binary which was created using
+a production compiler (in our case, llvm -O0); in the event
+that the target contains loops, STOKE identifies loop-free
+subsequences of the code which it will attempt to optimize.
+The user also provides an annotated driver in which the target is called in an appropriate context. Based on the user’s
+annotations, STOKE automatically generates random inputs to the target, compiles the driver, and then runs the
+code under instrumentation to produce testcases. The target and testcases are broadcast to a small cluster of synthesis
+threads which after a fixed amount of time report back candidate rewrites. In like fashion, a small cluster performs
+optimization on both the target and those rewrites. Finally,
+the set of rewrites with a final cost that is within 20% of the
+minimum are re-ranked based on actual runtime, and the
+best is returned to the user.
+superotpimization, and identified a 25 program benchmark
+which ranges in complexity from turning off the right-most
+bit in a word, to rounding up to the next highest power
+of 2, or selecting the upper 32 bits from a 64-bit multiplication. Our implementation of the benchmark uses the C code
+found in the original text. For brevity, we discuss only the
+programs for which STOKE discovered an algorithmically
+distinct rewrite.
+Figure 13 shows the “Cycle Through 3 Values” benchmark,
+which takes an input, x, and transforms it to the next value
+in the sequence ha, b, ci: a becomes b, b becomes c, and c
+becomes a. Hacker’s Delight points out that the most natural implementation of this function is a sequence of conditional assignments, but notes that on an ISA without condi-
+tional move intrinsics the implementation shown is cheaper
+than one which uses branch instructions. For 64-bit X86,
+which has conditional move intrinsics, this turns out to be
+an instance of premature optimization. Unfortunately, neither gcc nor icc are able to detect this, and are forced to
+transcribe the code as written. There are no sub-optimal
+subsequences in the resulting code and the production compilers are simply unable to reason about the semantics of
+the function as a whole. For this reason, we expect that
+equality-preserving superoptimizers would exhibit the same
+behavior. STOKE on the other hand, has no trouble redis covering the natural implementation from the 41 line llvm
+-O0 compilation. We note that although this rewrite is only
+five lines long, it remains beyond the reach of superoptimizers based on bruteforce enumeration.
+In similar fashion, the implementation that Hacker’s Delight recommends for the “Compute the Higher Order Half of
+a 64-bit Product” multiplies two 32-bit inputs in four parts
+and aggregates the results. The computation resembles the
+Montgomery multiplication benchmark, and STOKE discovers a rewrite which requires a single multiplication using the
+appropriate bit-width intrinsic. STOKE additionally discovers a number of typical superoptimizer rewrites. These
+include using the popcnt intrinsic, which counts the number
+of 1-bits in an integer, as an intermediate step in the “Compute Parity” and “Determine if an Integer is a Power of 2”
+benchmarks.
+CONCLUSION AND FUTURE WORK
+We have shown a new approach to the loop-free binary superoptimization task which reformulates program optimization as a stochastic search problem. Compared to a tradi-
+tional compiler, which factors optimization into a sequence
+of small independently solvable subproblems, our framework
+is based on cost minimization and considers the competing
+constraints of transformation correctness and performance
+improvement simultaneously as terms in a cost function.
+We show that an MCMC sampler can be used to rapidly
+explore functions of this form and produce low cost samples
+which correspond to high quality code sequences. Although
+our method sacrifices completeness, the scope of programs
+which we are able to reason about, and the quality of the
+rewrites we produce, far exceed those of existing superoptimizers.
+Although our prototype implementation, STOKE, is in
+many cases able to produce rewrites which are competitive
+with or outperfrom the code produced by production compilers, there remains substantial room for improvement. In
+future work, we intend to pursue both a validation and proposal mechanism for code containing loops and a synthesis
+cost function which is robust against targets with numerous
+deceptively attractive, albeit completely incorrect synthesis
+alternatives.

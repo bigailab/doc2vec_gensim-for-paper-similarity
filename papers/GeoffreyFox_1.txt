@@ -1,0 +1,643 @@
+Algorithms and the Grid
+Abstract We review the impact of Grid Computing and
+Web Services on scientific computing, stressing the impor-
+tance of the “data-deluge” that is driven by deployment of
+new instruments, sensors and satellites. This implies the
+need to integrate the naturally distributed data sources with
+large simulation engines offering parallel low latency com-
+munication and so to integrate parallel and Grid computing
+paradigms. We start with an overview of these and the evolv-
+ing service architectures. We illustrate the identified areas of
+interest for Algorithms and the Grid with the specific exam-
+ple of SERVOGrid that supports earthquake science research.
+We comment on the appropriate messaging infrastructure for
+Grids and data assimilation and contrast it with MPI.
+2 Grids and virtual organizations
+2.1 Introduction
+Grid computing has diverged quite far from its initial incarna-
+tion as meta-computing, or the assemblage of distributed par-
+allel computers into a single large virtual parallel machine.
+Such systems ultimately are limited by network communica-
+tion speeds. Instead, the aim of Grid computing is to build the
+distributed computing infrastructure to support so-called Vir-
+tual Organizations (VOs). In a VO, many different member
+institutions can contribute resources to a single Grid, which
+may then be supported by a unified security infrastructure and
+information and monitoring system. These resources include
+computers, instruments, sensors, data repositories, networks
+and people. Useful services, such as secure, uniform remote
+access to high performance computing resources and secure,
+cross-institutional, reliable data management tools, can be
+built on top of this core infrastructure. Today, such systems
+are often termed “cyberinfrastructure” [14]. The develop-
+ment of cyberinfrastructure has been timely, as academic
+research funding has favored multi-disciplinary and multi-
+institutional teams of scientists. These trends in Grid
+computing to support “e-Science” have been mirrored in the
+commercial world: distributed computing technology devel-
+opment has been driven by the commercial sector’s pressing
+need to integrate globally distributed enterprises.
+2.2 Styles of Grids
+Grid computing is a catch-all phrase that refers to several
+different types of distributed computing. In order to clarify
+this picture, we find it useful to identify major Grid families.
+As we shall see, this seemingly diverse collection of capabil-
+ities can be unified into a single coherent picture, based on
+Service Oriented Architecture principles [15].
+– Computational Grids: these are traditional Grids that are
+designed to provide support for high performance com-
+puting resources. Such Grids are still quite popular and
+valuable.
+– Sensor and Data Grids: these are Grids that provide access
+to data and related metadata. The data may be archi-
+val or real-time, collected in either case from sensors,
+scientific instruments, etc. Metadata, or “data about data”
+is also very important in these simulations. Geographic
+Information Systems (GIS) described in Sect. 5 provide
+an important sub-family in this group.
+– Collaborative Grids: these Grids support communication
+in all forms, ranging from document and message sharing
+to instant messaging to audio/video collaboration. Group
+participation and data sharing are also important to these
+applications.
+– Peer-to-Peer, or Community Grids: these Grids apply
+principles of peer-to-peer computing (such as decentral-
+ized, dynamic organization) to scientific computing
+resource collections.
+– Semantic Grids: these Grids focus on information rep-
+resentation and management. Such information manage-
+ment may be important for both human users as well as
+machine processing. Semantic information systems may
+support other styles of Grids: they are potentially an excel-
+lent way to manage multi-staged computing tasks (“work-
+flow”) that must run in a distributed environment.
+Grid applications in many fields must rely upon services that
+emerge from many of these families. Military command and
+control and civilian emergency preparedness and response
+for crisis management are two such examples. In either case,
+Grid-based collaboration services must link participants,
+many of whom will be on unreliable networks. Participants
+will need to rapidly assess data, so integration of data Grid
+services with computational processing is required. We refer
+to these collections of Grid service families as a “Grid of
+Grids.” [16]
+4 The impact of Grids on algorithms The above assumes of course that Grids will be used to
+manage classic high performance computing applications.
+While this will remain an important style of Grids, data driven
+high performance computing applications of data assimila-
+tion and data mining are increasingly important. These appli-
+cations must rely upon external data sources (both real-time
+data streams and archival data) that typically are remote from
+the high performance computing resource.
+More generally, Grid-based algorithms may be developed
+to support the interconnections of loosely coupled distributed
+applications. Such applications may consist of remote data
+source, a number of linked applications running on separate
+supercomputers, filtering programs for data format conver-
+sations between applications, and so forth. Service oriented
+Grid computing offers the general architecture for accom-
+plishing these linkages. Management of these loosely inte-
+grated applications is known as Grid workflow discussed in
+more detail in Sect. 6. Workflow builds on classic distributed
+programming models such as Linda [19] and the data flow
+concept pioneered by AVS [20]. This type of Grid applica-
+tion includes “code-coupling” which supports multi-disci-
+plinary simulations such as those linking aerodynamics and
+structures or ocean and atmosphere. These simulation cou-
+pling can of course be combined with data assimilation. The
+latter is a key area where new algorithm work is critical.
+A typical scenario shown in Fig. 1 can apply to scientific
+simulations such as weather forecasting with data from sat-
+ellites and sensors; it can also be seen in financial model-
+ing or military intelligence applications where data could be
+stock prices or electronic signals. The latter illustrate that
+new applications are enabled by the data-deluge and these
+need new algorithms. A good example is complex systems
+simulations for social science and biology, which up to now
+have not been major users of large scale computers. The capa-
+bility of Grids to marshal their data implies the possibility
+of new algorithms for such simulations as those of biolog-
+ical organisms, the spread of disease and the response of
+critical infrastructure (transportation, energy, communica-
+tion) to major disruptions from earthquakes, hurricanes or
+terrorists.
+Such applications must be able to address problems not
+typically encountered in classic parallel computing.
+As discussed above, Grid computing in its general sense does
+not replace or expand parallel computing in the classic “meta-
+computing” sense. Thus we find Grid extensions of MPI to
+be only part of the solution with a richer model discussed in
+Sect. 6. Instead, Grids are geared toward resource manage-
+ment across organizations. Parallel computing applications
+and hardware are examples of these resources as shown in
+Fig. 1. In this simple sense, implementations of parallel algo-
+rithms may exist untouched running on resource nodes in a
+Grid. – Applications must be fault tolerant, as failures become
+increasingly likely in Grid applications.
+– Applications must be able to tolerate millisecond (and
+preferably longer) communication latencies discussed in
+Sect. 6 instead of microsecond messaging speeds in MPI.
+Note the need for latency tolerant algorithms to exploit
+distributed computing is well known. We do not see any
+major developments here in new algorithms for tradi-
+tional core scientific computing problems—say solving
+partial differential equations or particle dynamics. These still need low latency i.e. classic parallel systems, for good
+performance.
+– Information management becomes increasingly impor-
+tant, as workflow applications benefit from late binding:
+decisions on which specific service instances to use are
+not made until needed. Generalizing the last point, we discuss in Sect. 6 that Grids
+are developing the best core technology to build Problem
+Solving Environments (PSE) as these need exactly the inte-
+gration and management delivered by Grids and the multi-
+millisecond latency is typically not important in the initiation
+of a PSE or toolkit component.
+There are examples of important algorithms enabled and
+required by distributed environments. One example is the
+distributed hash tables used in scalable peer to peer lookup
+and less well known are distributed security algorithms to
+support dynamic communities. Data mining algorithms are
+already active areas of research and these are needed for the
+distributed system itself as for example in the analysis of
+denial of service attacks and other Internet activities.
+In the following section, we will draw upon our work in
+the NASA SERVOGrid project to make proceeding discus-
+sion concrete. We then discuss in Sect. 6 our research on high
+performance Internet messaging for Grids using the Narada-
+Brokering messaging system.
+5 SERVOGrid: integrating data and computing Grids
+The NASA AIST funded SERVOGrid project is being desig-
+ned and built to integrate scientific applications with data
+resources. Users typically interact with the system using
+computational Web portals. SERVOGrid is described in more
+detail in [21]. See also [22].
+5.1 SERVOGrid applications
+The following is a partial list of SERVOGrid applications:
+– GeoFEST is a three-dimensional viscoelastic finite ele-
+ment model for calculating nodal displacements and
+tractions. It allows for realistic fault geometry and charac-
+teristics, material properties, and body forces. GeoFEST
+requires earthquake fault models as input data.
+– Virtual California (VC) simulates interactions between
+vertical strike-slip faults using an elastic layer over a
+viscoelastic half-space. Virtual California requires earth-
+quake fault and friction models as input data.
+– Pattern Informatics (PI) calculates regions of enhanced
+probability for future seismic activity based on the seis-
+mic record of the region. Pattern Informatics requires seis-
+mic catalogs as input. – RDAHMM (for Regularized Deterministic Annealing
+Hidden Markov Model) is a time series analysis program
+based on Hidden Markov Modeling. It produces feature
+vectors and probabilities for transitioning from one class
+to another. RDAHMM may be applied to any time series
+data, such as GPS and seismic data.As can be seen from the list, these applications have incre-
+asingly interesting data requirements: GeoFEST and VC are
+traditional, parallel high performance computing applica-
+tions that have external data requirements that may be ful-
+filled by agencies such as Earthscope or SCEC. PI relies on
+seismic catalogs that are regularly updated, and RDAHMM
+relies upon regularly updated GPS catalogs. RDAHMM is
+also an excellent candidate for real-time data analysis, as
+we will discuss. Typically in the code development phase of
+SERVOGrid applications, these data sets are downloaded by
+the code developers from online archives and stored locally
+in files. However, when integrating these applications into
+Web portal environments, or otherwise attempting to auto-
+mate the code execution phase, we must find an alternative
+strategy.
+This application list is interesting in that it includes clas-
+sic scientific algorithms solving differential equations mixed
+with data-mining and analysis codes. These two classes inter-
+act with the classic simulations being used to test and moti-
+vate the data-mining. In the previous sections, we noted the
+importance of algorithms that support interactions with data;
+data-mining typically corresponds to codes that directly ana-
+lyze data and data assimilation to codes where simulation and
+data are mixed. We see all these classes growing in impor-
+tance with data assimilation being developed for SERVOGrid
+as the amount of real-time data increases.5.2 GIS Grid services for SERVOGrid
+Implementations of Geographical Information Systems
+(GIS) standards provide Data Grid services that can be used
+to provide programming interfaces (as distinguished from
+human user interfaces) to data. Our efforts in building GIS
+Grid services are described in related publications, and we
+summarize briefly here. We base our service implementa-
+tions on the Open Geospatial Consortium (OGC)’s specifi-
+cations. These are described in [23] and more publications
+and reports are available from [24]. Web Feature Services [25]
+are used to store archived data that may be used to describe
+abstract map features. The WFS is a useful general purpose
+GIS archived data service: in SERVOGrid we typically use
+it to store archived records for GPS stations, seismic activ-
+ity, and faults. We have implemented Web Service versions
+of WFS that use both SOAP over HTTP and higher per-
+formance streaming data that are described in Sect. 7. Web
+Map Services [26] generate human readable maps from Web Feature Servers and other Web Map Servers. Our approach
+to GIS Information Service deviates from the OGC specifi-
+cations, since, by using a Web Service approach to informa-
+tion management, we may adopt more general Web Service
+information systems. Finally, Sensor Web Enablement [27]
+is a family of related specifications for describing sensors.
+Our efforts here have focused on integrating NaradaBroker-
+ing messaging described in Sect. 6 with streaming GPS data.6 Integrating pattern informatics and GIS Grid
+services: programming the Grid
+The Pattern Informatics (PI) application [28] has been suc-
+cessfully used to forecast regions of increased probability
+for large seismic activity. PI techniques have been applied
+regionally (to the Western United States and to Japan) and
+globally. The PI application uses seismic archive data, such
+as provided by the Southern California Earthquake Cen-
+ter (SCEC) and the United States Geographical Survey’s
+Advanced National Seismic System (ANSS), as input data
+and generates a latitude/longitude grid of relative probability
+changes that may be superimposed on maps.
+Automated versions of PI may be integrated with GIS ser-
+vices in three ways:
+– Web Feature Services may be used retrieve seismic
+archives based on query filters such as latitude/longitude
+bounding boxes, event magnitude ranges, and time peri-
+ods.
+– Web Map Services may be used to build interactive user
+interfaces and batch-style maps.
+– GIS Information services can be used to locate both Web
+Feature Services and Web Map Services that have the
+desired capabilities. For example, one may locate a WFS
+that has the seismic records for the desired bounding box.
+These data web services may be coupled to “Execution
+Grid” style services that can be used to manage running appli-
+cations. This coupling is sometimes referred to as “service
+orchestration” or “Grid workflow.”
+Scientific workflow management described in Sect. 6 is an
+active field, and overviews are available from [29]. Typically
+these tools are coupled to programming environments: Grid-
+enabled scripting languages and XML workflow expression
+languages are common, and are often coupled to visual pro-
+gramming tools.
+HPSearch (www.hpsearch.org) is our research effort in
+this area. HPSearch collectively includes several constituent
+parts, including support for JavaScript-based Grid workflow
+scripting; distributed Web Services for workflow enactment;
+and Web Service wrappers that can be used to exchange
+events between Web Services and the HPSearch controlling
+Fig. 2 GIS Grid and Execution Grid services may be integrated
+into meta-applications using workflow orchestration tools such as
+HPSearch. This represents a “two-level” programming model: applica-
+tions are wrapped as services that are in turn programmed (or scripted)
+on a Grid. Dashed arrows represent actual data (file) flow. Solid arrows
+indicate control messages sent by HPSearch. Dot-dash arrows show
+messages transmitted through NaradaBrokering
+engine. HPSearch research focuses on two additional areas
+not usually accounted for in workflow systems: management
+of data streams and management of messaging (NaradaBro-
+kering) networks.
+Figure 2 below illustrates the integration of HPSearch with
+GIS services and the PI code. This is described in more detail
+in [23]. Web Map Server clients initially generate requests
+for PI code runs by specifying time intervals, latitude and
+longitude bounding boxes, lower cutoff values for earth-
+quake magnitudes used in the forecast, and the size of the
+latitude/longitude grid of the bounding box. These request
+parameters are passed to the HPSearch master node (TRex in
+the figure), which first chooses an available HPSearch worker
+node (Danube) to execute the workflow. The worker node is
+passed a URI name for the JavaScript workflow to be exe-
+cuted. The worker node then manages the workflow chain:
+the desired seismic data (in GML format) is fetched from
+an appropriate Web Feature service and filtered into a for-
+mat understandable by the PI code. The filtered data is then
+collected and the PI code is launched. PI output data (a grid
+of seismic “hot spots” forecasts) is then filtered back into
+GML feature data that may be suitably rendered by the Web
+Map Server. The WS-Context server is used to keep track
+of the evolving state of this workflow: several components
+may register for interest in events, such as the notification of
+workflow completion.
+The individual components in Fig. 2 represent separate
+Web Services running on distributed hosts. The key element
+in this model is that the Web Services may be developed
+and maintained independently of each other. Their combi-
+nation into this particular application is ad-hoc. HPSearch supplies the scripting control and the “glue” filters for this
+specific meta-application. The PI application itself is a rela-
+tively small code, but more sophisticated parallel applications
+may be managed in a similar manner.
+Our evaluation of this meta-application revealed two not-
+surprising bottlenecks: HTTP is too inefficient for non-
+trivial data transport, and ASCII-based XML representation
+can lead to processing overheads as well as transport over-
+heads. We view both of these problems as opportunities for
+research. Efficient transport of XML messages is the subject
+of the next section, and efficient XML processing is an active
+effort of research [30].
+6.1 Providing live GPS data for data mining applications
+The Pattern Informatics application is an example of file-
+based workflow, but these techniques may also be applied
+to real-time applications. In this section we discuss work in
+progress to integrate GPS data streams with the RDAHMM
+application [31]. This work is part of a general research area
+in real-time change detection and data mining.
+RDAHMM may be used to analyze time series data to
+automatically determine underlying physical modes in the
+series. For example, earthquakes and seismic activity in Cal-
+ifornia may show up in nearby GPS stations maintained by
+the Southern California Integrated GPS Network (SCIGN).
+RDAHMM may be trained to automatically detect these in
+archival GPS records. RDAHMM may also be used to detect
+more subtle mode shifts in time series signals that are not
+easily discernable to the human eye. Currently RDAHMM
+may be used to analyze GPS archival records, and we may
+apply workflow techniques to this problem that are similar
+to the PI application discussed above.However, we also see an opportunity for event change
+detection in real-time data. RDAHMM service instances may
+be trained on archival GPS data to identify the station’s his-
+torical modes. A network of RDAHMM services may then
+be attached to GPS networks. State changes in individual
+GPS stations may be detected in real-time, and interested
+subscribers can receive notification.
+A real-time version of RDAHMM is still in development,
+but we have recently completed an initial version of a real-
+time GPS filtering system that may be used to deliver data
+to RDAHMM. This is illustrated in Fig. 3. Current sup-
+port includes three GPS networks (OCRTN, RICRTN, and
+SDCRTN) with 28 GPS stations. Raw data is collected by
+an RTD server maintained by Scripps Orbit and Permanent
+Array Center (SOPAC). Each network is published on a sep-
+arate network port in the binary RYO format. Data rates are
+1–2 Hz. All stations in a particular network are published on
+the same port: the 12 GPS stations in OCRTN are all pub-
+lished on the same port, 7010, for example.
+Applications such as RDAHMM have two requirements
+for this data: GPS network streams should be decoupled
+into individual station streams, and the data streams should
+be converted into displacement values. We anticipate, with
+the adoption of OGC Sensor Web Enablement applications,
+that other applications may expect data in “Observations and
+Measurements” GML format. We address these issues by
+building filter chains. NaradaBrokering endpoints (simple
+Java programs) have been developed to accept data from the
+streaming ports 7010–7012. This data is then published into
+a broker network on an appropriate topic (or channel) name.
+See Fig. 4 for a list of channels. For example, RYO data
+from the OCRTN network is published to the /SOPAC/GPS/
+Positions/OCRTN/RYO channel. NaradaBrokering subscribers to this channel may receive
+this data directly. One such subscriber is a RYO-to-ASCII fil-
+ter, which converts data into text format. This filter acts in turn
+as a publisher to the appropriate topic (such as SOPAC/GPS/
+Positions/OCRTN/ASCII), where interested subscribers may
+receive it. We may add any number of additional filters in the
+filter chain, including GML converters and station decou-
+pling filters. RDAHMM applications may similarly be wra-
+pped to receive data on the appropriate channel, and publish
+interesting state change events.This work is described in
+more detail at [32], which also includes simple demos and
+downloadable software.
+Returning to Fig. 1, we see data manipulation is depicted at
+the edges of the diagram (at the sources) before their integra-
+tion and assimilation in the “central” simulation. Our GPS
+filtering is equivalent to the edge filtering whereas Pattern
+Informatics is a typical central activity. This illustrates the
+algorithmic opportunity to identify decoupled parts of the
+analysis that can be placed on cost effective distributed plat-
+forms. In fact this decoupling is needed to match the vol-
+ume of data to the simulation; otherwise the data deluge will
+overwhelm the simulation engine whose low latency inter-
+connects make it powerful but more expensive per operation
+than distributed commodity analysis systems. Algorithms
+that optimally support this split into parallel assimilation and
+distributed filtering need further study.
+7 Problem solving environments and messaging
+Typical Web Services are used in situations with interaction
+delays (network transit) of 100s of milliseconds. However,
+basic message-based interaction architecture only incurs
+fraction of a millisecond delay. One strategy would thus
+be the use of Web Services to build all PSE components.
+Here we note that in such settings interactions between the
+121
+distributed entities should be based on the use of messages
+and not remote method/subroutine calls.
+Messaging has several advantages over scripting langua-
+ges. First, collaboration between the distributed entities is
+trivial since it simply involves sharing of messages. The
+richness of collaborative interactions is dependent on the
+information encapsulated within these messages. Second,
+messaging-based interactions engender greater modularity
+in the development of systems. For example, one could have
+separate classes or modules to deal with different types of
+messages. Finally, Web Services presently have (and we
+expect this to improve even more) very good support for
+messaging.
+Loosely-coupled applications can also leverage workflow
+technologies. But perhaps the most important decision in
+the building of problem solving environments is the deter-
+mination of the characteristic interaction time (millisecond
+programs; microseconds MPI and particle) and use the best
+supported architecture at this level.
+A major difficulty in these frameworks is not their con-
+struction but their support. Here we suggest that it might be
+best to minimize life-cycle support risks. While building very
+specialized problems solving environments it must be noted
+that sometimes these applications tend to be very specialized
+to support much. Designers must thus expect to use different
+technologies at each level even though it might be possible
+to do everything with one technology. Designers might also
+have to make decisions regarding trade offs involving support
+versus performance/customization
+7.1 Requirements for MPI messaging
+MPI and SOAP Messaging both send data from a source to
+a destination. We now proceed to briefly enumerate some
+of the characteristics pertinent to MPI. MPI includes sup-
+port for multicast (broadcast) communication, and specifies
+both the destination and a context (in the comm parameter).
+MPI specifies the data to be sent and has a tag to allow flex-
+ibility in processing in the source processor. Furthermore,
+MPI has calls to understand context (number of processors
+etc). MPI requires very low latency and high bandwidth so
+that t comm /t calc is at most 10 (here, t calc corresponds to the
+time spent processing a message while t comm corresponds to
+the communication delays for the message in transit). For
+example, BlueGene/L has bandwidth between 0.25 and 3
+Gigabytes/sec/node and latency of about 5 ms.
+Web Services have much of the same requirements as
+MPI with two differences, where MPI is more stringent than
+SOAP. First, latencies are inevitably 1 (local) to 100 millisec-
+onds, which is 200 to 20,000 times that of BlueGene/L. To put
+these numbers in perspective, typically it takes 0.000001 ms
+for a CPU to perform a calculation; MPI latency tends to be in
+the order of 0.001–0.01 ms; it takes around 1–10 ms to wake up a thread or perform a context switch between processes;
+finally, Internet delay tends to be between 10–1,000 ms.
+However, unlike MPI, SOAP has far greater flexibility in
+areas like security, fault-tolerance, “virtualizing addressing”
+because one can run a lot of software in 100 ms. Typically it
+takes 1–3 ms to process a modest message in Java and “add
+value”
+SOAP defines a very obvious message structure with a
+header and a body just like email. The header contains infor-
+mation used by the “Internet operating system.” This includes
+the intended destination, source, routing information, and
+context. The SOAP message body is partly further informa-
+tion used by the operating system and partly information for
+the application when it is not looked at by “operating sys-
+tem” except to encrypt, compress it etc. Here we note that
+WS-Security supports separate encryption for different parts
+of a document. Much discussion in the field revolves around
+what is referenced in header. This structure makes it possible
+to define very sophisticated messaging.
+One key difference between SOAP and MPI is that MPI
+only specifies interface and so interoperability between dif-
+ferent MPI implementations requires additional work [33].
+Pervasive networks can support high bandwidth (Terabits/sec
+soon) but the latency issue is not resolvable in general way.
+One can possibly combine MPI interfaces with SOAP mes-
+saging but this has perhaps not yet been done. Just as walk-
+ing, cars, planes, phones coexist with different properties;
+so SOAP and MPI are both good and should be used where
+appropriate.
+In messaging systems distributed entities communicate
+through the exchange of messages. These messages are self-
+describing and contain the semantic intent of the message.
+Depending on the application these messages can be made to
+encapsulate system conditions, method invocations, resource
+sharing, data interchange among others. Messages may also
+describe their correlation, dependency and causal relation-
+ships to other messages. In understanding the requirements
+of message passing, it is useful to divide multi-processor
+(distributed memory) systems into three classes.
+1. Classic massively parallel processor systems (MPP) with
+low-latency, high-bandwidth specialized networks. Here
+one aims to have message latencies in the order of one
+to a few microseconds and scalable bisection bandwidth.
+Ignoring latency, the time to communicate a word bet-
+ween two nodes should be a modest multiple (perhaps
+20) of time taken to calculate a floating point result. This
+communication performance should be independent of
+number of nodes in system.
+2. Commodity clusters with high performance but non-opti-
+mized communication networks. Latencies can be in the
+100–1,000 ms range typical of simple socket based com-
+munication interfaces.3. Distributed or Grid systems with possibly very high inter-
+node bandwidth but the latency is typically 100 ms or
+more as familiar from Internet travel times.
+Of course there is really a spectrum of systems with cost-
+performance increasing by four orders of magnitude or so as
+one goes from (1) to (3). Here we will focus on the endpoints
+(1) and (3)—MPP’s and the Grid—and not worry about inter-
+mediate cases like 2). MPI especially is aimed at the class
+(1) with optimized native implementations exploiting par-
+ticular features of the network hardware. Generic versions
+of PVM [34] and MPI [35] using socket based communica-
+tion on a localized network illustrate (2) as do many other
+specialized programming environments (such as agent-based
+approaches). The latter typically cannot afford the develop-
+ment effort to optimize communication. Furthermore, Grid
+messaging requires substantially more functionality than
+MPI and PVM. Grid systems are very diverse and there is
+little understanding at this stage as to critical performance
+and architecture (topology) characteristics. There is thus a
+need for a rich messaging environment very different from
+MPI and PVM. Note this does not mean that we should not
+port systems like MPI to the Grid as in MPICH-G2 [36] and
+PACX-MPI [37]; there is clearly a need to run all messaging
+environments on all classes of machine.
+7.2 NaradaBrokering
+We have built a messaging system—NaradaBrokering [38]—
+that is designed to support traditional Web Services but has an
+architecture that allows it to support high performance data
+transport as required for Scientific applications. We suggest
+using this system whenever your application can tolerate 1–
+10 ms latency in linking components. For applications that
+require lower latencies we recommend the use of MPI.
+The NaradaBrokering messaging infrastructure incorpo-
+rates support for enterprise messaging specifications such
+as the Java Message Service [39]. It also incorporates sup-
+port for Web Service specifications such as WS-Eventing
+[40], WS-ReliableMessaging [41] and WS-Reliability [42].
+The NaradaBrokering messaging infrastructure includes sup-
+port for services such as reliable and ordered delivery. Ser-
+vices available within the messaging substrate also include
+replay support, recording, synchronized Network Time Pro-
+tocol based timestamps, buffering and discovery of nodes.
+7.3 Fast Web service communications
+Internet Messaging systems allow one to optimize message
+streams at the cost of startup time. Web Services can deliver
+the fastest possible interconnections with or without reli-
+able messaging. The costs involved in reliable messaging
+for Web Services tend to be a little higher, since the dominant specifications WS-Reliability and WS-ReliableMessaging
+both mandate the storage of the SOAP message to stable
+storage prior to forwarding the message.
+It is possible to have very fast communications within
+Web Services. Here we outline our scheme which works for
+streams, which are essentially sets of related messages. For
+individual messages in the streams the SOAP header is con-
+stant except for headers pertaining to sequence number (Mes-
+sage ID), time-stamp. Next, one needs two types of new Web
+Service Specifications viz. WS-StreamNegotiation and WS-
+FlexibleRepresentation. WS-StreamNegotiation defines how
+one can use WS-Policy to send messages at the start of a
+stream to define the methodology for treating remaining mes-
+sages in the stream. WS-FlexibleRepresentation is used to
+define new encodings for messages.
+We then use WS-StreamNegotiation to negotiate stream
+in Tortoise SOAP—ASCII XML over HTTP and TCP. We
+deposit the basic SOAP header through this connection; this
+is part of the context for the stream (linking of two services).
+This exchange is also used to agree on firewall penetration,
+reliability mechanism, binary representation and fast trans-
+port protocols. Next we use WS-FlexibleRepresentation to
+define encoding of a Fast transport (On a different port) with
+messages just having FlexibleRepresentationContextToken,
+Sequence Number, Time stamp if needed. RTP packets have
+essentially this structure. Here we could add stream termina-
+tion status. Using this strategy one can monitor and control
+with the original negotiation stream. Furthermore, one can
+also generate different streams optimized for different end-
+points.
+123
+In programming SOAP and Web Services (the Grid)
+workflow describes linkage between services. Since the vari-
+ous services, resources and other components are distributed,
+the linkage between them must be through the exchange
+of messages. This linkage is twoway and has both control
+and data. The BPEL specification from Microsoft-IBM is
+currently the preferred Web Service XML specification of
+workflow.
+8 Summary and conclusion
+We have reviewed the impact of the Grid computing and
+data-intensive computing on future algorithm development.
+We must build upon parallel computing applications and high
+performance computing to integrate geographically distrib-
+uted data sources. The driving constraint that separates Grid
+computing from parallel computing is the so-called “rule of
+the millisecond.” Grid application components must be toler-
+ant of millisecond (or longer) communication latencies, but
+this constraint does not apply to the interior workings of spe-
+cific components, which may be parallel applications. This
+implies a “two-level” programming model: components may
+be developed as parallel services, but they are programmed
+by Grid workflow technologies.
+Grid components are developed as Web Services that fol-
+low the conventions of Service Oriented Architecture design.
+In this model, Grid components are self-contained, have a
+well-defined programming interface defined in WSDL, and
+communicate using SOAP messaging. The efficiency of
+SOAP messaging may be dramatically improved by adopting
+faster transport mechanisms, such as the NaradaBrokering
+system, and by efficient representations.
+7.4 The role of workflow
+The Web Service (Grid) paradigm implicitly assumes a two-
+level Programming Mode. Here one makes a Service (same
+as a “distributed object” or “computer program” running on
+a remote computer) using conventional technologies such as
+C++ Java or Fortran Monte Carlo module, data streaming
+from a sensor or Satellite and specialized (JDBC) database
+access. Such services accept and produce data from users
+files and databases. The Grid is built by coordinating such
+services assuming we have solved problem of programming
+the service
+The Grid is discussing the composition of distributed ser-
+vices with the runtime interfaces to Grid as opposed to UNIX
+pipes/data streams. One can use UNIX Shell, PERL or Python
+scripts to produce real applications from core programs. Such
+interpretative environments are the single processor analog
+of Grid Programming. Some projects like GrADS from Rice
+University are looking at integration between service and
+composition levels but dominant effort looks at each level
+separately.

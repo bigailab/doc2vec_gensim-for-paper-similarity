@@ -1,0 +1,23 @@
+Indexing for Interactive Exploration of Big Data Series
+Abstract
+Numerous applications continuously produce big amounts of data
+series, and in several time critical scenarios analysts need to be
+able to query these data as soon as they become available, which
+is not currently possible with the state-of-the-art indexing methods
+and for very large data series collections. In this paper, we present
+the first adaptive indexing mechanism, specifically tailored to solve
+the problem of indexing and querying very large data series col-
+lections. The main idea is that instead of building the complete
+index over the complete data set up-front and querying only later,
+we interactively and adaptively build parts of the index, only for
+the parts of the data on which the users pose queries. The net ef-
+fect is that instead of waiting for extended periods of time for the
+index creation, users can immediately start exploring the data se-
+ries. We present a detailed design and evaluation of adaptive data
+series indexing over both synthetic data and real-world workloads.
+The results show that our approach can gracefully handle large data
+series collections, while drastically reducing the data to query de-
+lay: by the time state-of-the-art indexing techniques finish index-
+ing 1 billion data series (and before answering even a single query),
+adaptive data series indexing has already answered 3 ∗ 10 5 queries.
+

@@ -1,0 +1,601 @@
+Stochastic Optimization of Floating-Point
+Programs with Tunable Precision
+The aggressive optimization of floating-point computations is an
+important problem in high-performance computing. Unfortunately,
+floating-point instruction sets have complicated semantics that of-
+ten force compilers to preserve programs as written. We present a
+method that treats floating-point optimization as a stochastic search
+problem. We demonstrate the ability to generate reduced precision
+implementations of Intel’s handwritten C numeric library which
+are up to 6 times faster than the original code, and achieve end-
+to-end speedups of over 30% on a direct numeric simulation and
+a ray tracer by optimizing kernels that can tolerate a loss of preci-
+sion while still remaining correct. Because these optimizations are
+mostly not amenable to formal verification using the current state of
+the art, we present a stochastic search technique for characterizing
+maximum error. The technique comes with an asymptotic guaran-
+tee and provides strong evidence of correctness.
+The aggressive optimization of floating-point computations is an
+important problem in high-performance computing. For many ap-
+plications, there is considerable value in being able to remove even
+a single instruction from a heavily used kernel. Unfortunately, both
+programming languages and compilers are limited in their ability
+to produce such optimizations, which in many cases can only be
+obtained by carefully sacrificing precision. Because most program-
+ming languages lack the appropriate mechanisms for a programmer
+to communicate precision requirements to the compiler, there is of-
+ten little opportunity for optimization.
+Floating-point instruction sets have complicated semantics. The
+ability to represent an enormous range of values in a small number
+of bits comes at the cost of precision. Constants must be rounded
+to the nearest representable floating-point value, basic arithmetic
+operations such as addition and multiplication often introduce ad-
+ditional rounding error, and as a result, even simple arithmetic prop-
+erties such as associativity do not hold. Because reordering instruc-
+tions can produce wildly different results, compilers are forced to
+preserve floating point programs almost as written at the expense
+of efficiency.
+In most cases a programmer’s only mechanism for communi-
+cating precision requirements to the compiler is through the choice
+of data-type (for example, float or double). This is, at best,
+a coarse approximation, and at worst wholly inadequate for de-
+scribing the subtleties of many high-performance numeric com-
+putations. Consider the typical task of building a customized im-
+plementation of the exponential function, which must be correct
+only to 48-bits of precision and defined only for positive inputs less
+than 100. An expert could certainly craft this kernel at the assem-
+bly level, however the process is tedious and error prone and well
+beyond the abilities of the average programmer.
+We present a method for overcoming these issues by treating
+floating-point optimization as a stochastic search problem. Begin-
+ning from floating-point binaries produced either by a production
+compiler or written by hand, we show that through repeated ap-
+plication of random transformations it is possible to produce high-
+performance optimizations that are specialized both to the range
+of live-inputs of a code sequence and the desired precision of its
+live-outputs. While any one random transformation is unlikely to
+produce an optimization that is also correct, the combined result
+of tens of millions of such transformations is sufficient to produce
+novel and often non-obvious optimizations which very likely would
+otherwise be missed.
+We have implemented our method as an extension to STOKE,
+a stochastic optimizer for loop-free sequences of fixed-point x86-
+64 programs (note that the original implementation of STOKE did
+not handle floating-point optimizations) [29]. Our system is the first
+implementation of a stochastic optimizer to take advantage of a JIT-
+assembler for the full 64-bit x86 instruction set and is capable of
+achieving a search throughput which outperforms the original im-
+plementation of STOKE by up to two orders of magnitude. Using
+our system we are able to generate custom implementations of the
+trigonometric and exponential kernels in Intel’s handwritten imple-
+mentation of the C numeric library math.h, which are specialized
+to between 1- and 64-bits of floating-point precision, and are up to
+6 times faster than the original code. Our system is also the first im-
+plementation of a stochastic optimizer to demonstrate the optimiza-
+tion of full programs. We show that for real world programs such as
+a massively parallel direct numeric simulation of heat transfer and
+a ray tracer, we are able to obtain 30% full-program speedups by
+aggressively optimizing floating-point kernels which can tolerate a
+loss of precision while retaining end-to-end correctness.
+The aggressive nature of the optimizations produced by our
+method creates a difficulty in checking the correctness of the re-
+sulting codes. There are two possible approaches using currently
+known static verification techniques. Unfortunately neither is capa-
+ble of verifying some of the kernels that arise in our applications.
+Existing decision procedures for floating-point arithmetic that are
+based on bit-blasting could, in principle, be used to prove equiva-
+lence of an original and an optimized code within a specified er-
+ror tolerance. However in practice these techniques can only han-
+dle instruction sequences on the order of five lines long, which is
+two orders of magnitude too small for our benchmarks. Abstract
+interpretation is the alternative, but no static analysis has even at-
+tempted to deal with the complexity of high-performance floating-
+point kernels. In particular, no existing analysis is capable of rea-
+soning about mixed floating- and fixed-point code, and yet many
+floating-point computations include non-trivial sections of fixed-
+point computation that affect floating-point outputs in non-obvious
+ways.
+Randomized testing is a possible alternative, but the guarantees
+offered by randomized testing are only empirical. Although passing
+any reasonable set of test cases, random or not, is encouraging
+and for many real code bases represents a de facto definition of
+correctness, random testing offers no formal guarantees beyond the
+inputs used in the tests. Several researchers have attempted to give
+statistical guarantees based on the absence of errors following the
+observation of a very large number of tests. However, in the absence
+of a formal characterization of the distribution of errors relative to
+program inputs these guarantees are statistically unsound and offer
+no stronger guarantees than plain random testing.
+We present a novel randomized method which does not suffer
+from these shortcomings and can be used to establish strong evi-
+dence for the correctness of floating-point optimizations. We treat
+the difference in outputs produced by a floating-point kernel, f , and
+an optimization, f 0 as an error function, E(x) = |f (x) − f 0 (x)|,
+and use a robust randomized search technique to attempt to find
+the largest value of E(y) for some input y. In the limit, the search
+is theoretically guaranteed to find the maximum value in the range
+of E. However, well before that limiting behavior is observed, we
+show that it is possible to use a statistical measure to establish confi-
+dence that the search has converged and that an optimization is cor-
+rect to within the specified error tolerance. Borrowing a term from
+the computational science community, we refer to this as a tech-
+nique for validating optimizations to distinguish it from the stricter
+standard of formal verification. Although our technique provides
+evidence of correctness, we stress that it does not guarantee cor-
+rectness.
+Using our technique, we are able to establish upper bounds on
+the imprecision of an optimization which are tighter than those pro-
+duced by either sound decision procedures or abstract interpretation
+techniques for benchmarks where these techniques are applicable.
+For benchmarks not amenable to either static technique we are able
+to produce upper bounds that either cannot be refuted, or are within
+a small margin of those exposed by successive random testing that
+is orders of magnitude more intensive than the effort expended on
+validation. Although there exist optimizations that we do not expect
+our technique to perform adequately on, we believe that the results
+we obtain are representative of the potential for a considerable im-
+provement over current practice.
+The remainder of this paper is structured around the primary
+contributions of our work. Section 2 provides essential background
+and terminology, Section 3 describes the theory necessary to extend
+STOKE to the optimization of floating-point programs, Section 4
+describes our novel validation technique for checking the equiva-
+lence of two loop-free floating point programs with respect to an
+upper bound on loss of precision, Section 5 discusses some of the
+novel implementation details of our extensions to STOKE, Sec-
+tion 6 summarizes experiments with real-world high-performance
+floating-point codes and explores the potential for alternate imple-
+mentations of STOKE, and Section 7 includes a discussion of re-
+lated work. We conclude with directions for future research.
+2.1
+MCMC Sampling
+MCMC sampling is a randomized technique for drawing samples
+from distributions for which a closed-form representation is either
+complex or unavailable. In fact, for many distributions, MCMC is
+the only known general sampling method which is also tractable.
+We make heavy use of one of its most important theoretical prop-
+erties.
+Theorem 1. In the limit, MCMC sampling is guaranteed to take
+samples from a distribution in proportion to its value.
+A useful corollary of this theorem is that regions of high
+probability are sampled more often than regions of low proba-
+bility. A common mechanism for constructing Markov chains with
+this property is the Metropolis-Hastings algorithm. The algorithm
+maintains a current sample, x, and proposes a modified sample x ∗
+as the next step in the chain. The proposal is then either accepted or
+rejected. If x ∗ is accepted, it becomes the current sample, otherwise
+it is discarded and a new proposal is generated from x.
+We say that proposals are ergodic if every point in the search
+space can be transformed into any other point by some sequence of
+proposals; that is, the search space is connected. If the distribution
+of interest is p(x), and q(x → x ∗ ) is the probability of proposing
+x ∗ when x is the current sample, then if the proposals are ergodic,
+the Metropolis-Hastings probability of accepting a proposal is de-
+fined as
+Although many distributions q(·) satisfy this property, the best
+results are obtained for distributions with variance that is neither
+too high, nor too low. Intuitively, p(·) is best explored by propos-
+als that strike a balance between local proposals that make small
+changes to x and global proposals that make large changes to x. Al-
+though MCMC sampling has been successfully applied to a num-
+ber of otherwise intractable problem domains, in practice the wrong
+choice of proposal distribution can lead to convergence rates that
+may only be slightly better than pure random search. As a result,
+identifying an effective proposal distribution often requires experi-
+mentation and is typically a critical precondition for success.
+Because for many functions it is difficult to compute q(x → x ∗ )
+given q(x ∗ → x), q(·) is often chosen to be symmetric (such that
+q(x → x ∗ ) and q(x ∗ → x) are equal). In this case, the probability
+of acceptance can be reduced to the much simpler Metropolis ratio
+by dropping q(·) from Equation 1.
+.2
+STOKE
+STOKE [29, 30] is a stochastic optimizer for fixed-point x86-64 bi-
+naries. It is capable of producing optimizations which either match
+or outperform the code produced by gcc and icc with full opti-
+mizations enabled, and in some cases, expert hand-written assem-
+bly. STOKE is an application of MCMC sampling to a combina-
+torial optimization problem. Given an input program (the target),
+T , STOKE defines a cost function over potential optimizations
+(rewrites) R.
+STOKE begins with either the target or a random rewrite and
+forms a Markov chain of samples from p(·) by repeatedly propos-
+ing modifications using q(·) and evaluating α(·) to compute the
+probability that the proposal should be accepted. By Theorem 1, in
+the limit most of these samples are guaranteed to be taken from
+rewrites that correspond to the lowest cost, best optimizations.
+However well before that limiting behavior is observed, STOKE
+takes advantage of the fact that MCMC sampling also functions as
+an efficient hill-climbing method which is robust against local max-
+ima; all rewrites, R ∗ , no matter how poor the ratio p(R ∗ )/p(R)
+is, have some chance of being accepted. In fact, it is precisely this
+property that makes STOKE effective. STOKE is often able to
+discover novel, high quality rewrites, which other compilers miss,
+by temporarily experimenting with shortcuts through code that is
+either non-performant or incorrect.
+3.
+Search
+The primary complication in adapting STOKE to floating-point
+programs is identifying an appropriate notion of correctness. The
+floating-point design goal of being able to represent both extremely
+large and small values in a compact bit-wise representation is fun-
+damentally at odds with the ability to maintain uniform precision
+within that range.
+Figure 1 shows the IEEE-754 standard for double-precision
+floating-point values. The standard is capable of representing mag-
+nitudes between 10 −324 and 10 308 as well as symbolic constants
+such as infinity and “not a number”, but cannot precisely repre-
+sent the value 0.1. Additionally, values are distributed extremely
+non-uniformly, with exactly half of all floating-point values lo-
+cated between −1.0 and 1.0. The inability to precisely represent
+real values is further complicated by the rounding error introduced
+by basic arithmetic operations. Most calculations on floating point
+numbers produce results which must be rounded back to a repre-
+sentable value. Furthermore, many operations are implemented in
+a way that requires their operands to be normalized to the same ex-
+ponent. For operands that vary greatly in magnitude, many digits
+of precision are discarded in the normalization process. Although
+the IEEE standard places strict bounds on these errors, they are
+nonetheless quite difficult to reason about, as even basic arithmetic
+identities such as associativity do not hold in general. As a result,
+floating-point optimizers are often forced to preserve programs as
+written, and abandon aggressive optimization.
+Given two floating-point programs, we say that an optimization
+is correct if the results it produces are all within a rounding error
+η of the result placed in the corresponding location by the original
+program. Two simple methods for representing rounding error are
+the absolute and relative error functions. These functions are de-
+fined over the real numbers R, of which the representable floating-
+point numbers F are a subset.
+The complexity of floating-point programs precludes the use
+of the most obvious implementations of this routine for many op-
+timizations of interest. In general, neither sound decision proce-
+dures, nor abstract interpretation techniques are currently practical
+for non-trivial programs.
+SMT float [27] is a new standard for decision procedures which
+contains support for floating-point operations, however it is only
+now beginning to be widely adopted. Z3’s implementation [10],
+for example, is based on bit-blasting and does not scale beyond
+programs containing a very small number of instructions [8]. Other
+approaches to deciding floating-point formulas are unable to handle
+code sequences that interleave fixed-point bit-vector and floating-
+point arithmetic [15, 17]. Because bit-wise operations, such as
+the extraction of exponent bits, are quite common in performance
+critical code, these procedures are currently incapable of verifying
+many interesting x86-64 optimizations. And although it is possible
+to replace floating-point instructions by uninterpreted functions,
+this abstraction cannot bound the error between two codes that are
+not bit-wise equivalent. As a result, the application of symbolic
+execution based approaches such as [6] is limited.
+The abstract domains used for floating-point reasoning in meth-
+ods based on abstract interpretation, such as those in [11], are also
+unable to handle the presence of fixed-point bit-wise operations.
+Furthermore, even in cases where the target and rewrite are in fact
+bit-wise equivalent, the approximations made by these abstractions
+render them unable to prove bit-wise equivalence in situations that
+commonly arise in practice. Nonetheless, we note that for programs
+which perform exclusively floating-point computations it is possi-
+ble to bound, if coarsely, the absolute error between two floating-
+point programs [8].
+Where neither of these approaches are appropriate, some work
+has been done in providing guarantees based on randomized test-
+ing [24]. Unfortunately, in the absence of any knowledge of how
+errors are distributed relative to program inputs, these guarantees
+are extremely weak. Essentially, they are no stronger than those
+obtained by a test suite and apply only to correctness with respect
+to the tests in that suite. As a simple example, consider a program
+f (x) and an optimization f 0 (x) for which the magnitude of the er-
+ror function E(x) = |f 0 (x) − f (x)| is distributed non-uniformly
+as the function | sin(x)|. Pure randomized testing is unlikely to un-
+cover the values of x for which E(x) is maximized.
+In contrast to the methods described above, we propose using
+MCMC sampling to draw values from the err(·) function. The
+idea is simple: our goal is to identify a test case, t, that will cause
+err(·) to produce a value greater than η. Although, in general, we
+cannot produce a closed form representation of err(·), sampling
+from it is straightforward: we simply evaluate T and R on t and
+compare the results. By Theorem 1, in the limit MCMC sampling
+will draw test cases in proportion to the value of the error function.
+Not only will this expose the maximum value of the function, but it
+will do so more often than for any other value.
+A remaining issue is the definition of a termination condition
+that can be used to determine when we can stop generating steps
+in the Markov chain. Effectively, we must define a criterion under
+which we can be reasonably confident that an observed sequence of
+samples contains the maximum value of the error function. A com-
+mon method is to check whether the chain of samples has mixed
+well. Mixing well implies that the chain has reached a point where
+it represents a stationary distribution and contains samples which
+result from a uniform distribution over the test cases in the domain
+of the error function. Under these conditions, we can be confident
+that the chain has sampled from the regions which contain all local
+maxima, and as a result, contains the global maximum. Metrics for
+determining whether a chain has mixed well are well known and
+available in many statistical computing packages [25]. We present
+the particular statistical test that we use in our implementation in
+Section 5.3.
+As discussed in Section 1, we call our MCMC-based random-
+ized testing method validation to distinguish it from formal veri-
+fication. While our method comes with a mathematical, if asymp-
+totic, guarantee and provides strong evidence of correctness, we
+stress that this is not the same level of assurance that formal verifi-
+cation provides. In particular, the sig(·) term in Equation 13 has the
+potential to introduce discontinuities that may be very difficult to
+discover. Thus, validate(·) is not an appropriate test of correctness
+for, say, optimizations applied to safety-critical code. Nonetheless,
+for many real world performance-critical applications where cor-
+rectness is already defined entirely with respect to confidence in the
+compiler writer and behavior on regression test suites, this defini-
+tion represents a considerable improvement over current practice.
+5.
+Implementation
+Our implementation of STOKE is based on the notes in [29, 30]
+and uses all of the optimizations described therein. We discuss only
+the most relevant details of our extensions below.
+5.1
+JIT Assembler
+Our implementation of STOKE evaluates rewrites using a JIT as-
+sembler which supports the entire x86-64 instruction set available
+on Intel’s Haswell processors: over 4000 variants of 400 distinct
+opcodes including Intel’s newest fused multiply-add, AVX, and
+advanced bit manipulation instructions. Our test case evaluation
+framework supports full sandboxing for instructions which derefer-
+ence memory and is two orders of magnitude faster that the imple-
+mentation of STOKE described in [29], which relies on an x86-64
+emulator. At peak throughput, our implementation is able to dis-
+patch test cases at a rate of almost 1 million per second on a sin-
+gle core. This performance improvement allows us to duplicate the
+synthesis results reported in [29] in at most 5 minutes on a single
+four core machine as opposed to a half hour on 80 cores.
+5.2
+Cost Function
+The computation of ULP rounding error shown in Equation 7,
+which is defined in terms of the comparison between a real num-
+ber and a floating-point number, is unnecessarily complicated when
+applied to the comparison of two floating-point values. In compar-
+ing the live outputs of two programs, we instead use the simpler
+version shown below, which simply counts the number of floating-
+point numbers between two values. In particular, we note that this
+function has the advantage of producing only integer results which
+greatly simplifies the program logic associated with cost manipula-
+tion.
+6.
+Evaluation
+We evaluate our implementation of STOKE with support for
+floating-point optimizations on three high performance bench-
+marks: Intel’s implementation of the C numerics library, math.h,
+a three dimensional direct numeric simulation solver for HCCI
+combustion, and a full featured ray tracer. Each benchmark con-
+tains a mixture of kernels, some of which require bit-wise correct-
+ness and some of which can tolerate a loss of precision while still
+being able to produce useful results. As we demonstrate below, a
+large performance improvement is obtained by aggressively opti-
+mizing the latter. We close with a case study that compares the
+MCMC search kernel used by STOKE against several alternate
+implementations.
+All experiments were run on a four core Intel i7 with support for
+the full Haswell instruction set. For benchmarks where handwrit-
+ten assembly was unavailable, targets were generated using gcc
+with full optimizations enabled (icc produced essentially identical
+code). STOKE was run in optimization mode with k set to 1.0, us-
+ing 16 search threads, 1024 test cases, and a timeout of 10 million
+proposals. The annealing constant, β, was set to 1.0, and moves
+were proposed with equal probability. For estimating a bound on
+optimization error, test case modifications were proposed using the
+standard normal distribution, N (0, 1).
+For every benchmark, STOKE search threads typically ran to
+completion in 30 minutes, and memory consumption never ex-
+ceeded one gigabyte. MCMC validation reached convergence after
+fewer than 100 million proposals, and runtimes never exceeded one
+minute. Some benchmarks were amenable to formal verification;
+we compare the results against our validation method whenever it
+is possible to do so.
+6.1
+libimf
+libimf is Intel’s implementation of the C numerics library,
+math.h. It contains hand-coded implementations of the standard
+trigonometric, exponential, and logarithmic functions. In addition
+to taking advantage of many non-obvious properties of polynomial
+approximation and floating-point algebra, these implementations
+are able to dynamically configure their behavior to use the most ef-
+ficient hardware instructions available on a user’s machine. The li-
+brary is many times faster than GNU’s implementation of math.h
+and able to produce results within 1 ULP of the true mathematical
+answer.
+Figure 4(a-c) shows the results obtained by running STOKE on
+three representative kernels: a bounded periodic function (sin()),
+a continuous unbounded function (log()), and a discontinuous
+unbounded function (tan()). For brevity, we have omitted results
+for cos() and exp(), which are similar. The library approx-
+imates the true mathematical functions using an implementation
+based on polynomials. Although there is a direct relationship be-
+tween the number of terms in those polynomials and the precision
+of a kernel, the details are quite complex at the binary level. Simply
+deleting an instruction does not correspond to deleting a term and
+will usually produce wildly inaccurate results.
+Reference points are given on the far left of each plot in Fig-
+ure 4. The original kernels range in length from 66 to 107 lines of
+code (LOC), and represent a baseline speedup of 1x. Figures 4(a-c)
+show the results of varying η between 1 and 10 18 , approximately
+the number of representable double-precision floating point values.
+For reference, we have highlighted η = 5 · 10 9 , and 4 · 10 12 , which
+correspond respectively to the ULP rounding error between the
+single- and half-, and double-precision representations of equiv-
+alent floating-point values. Setting η to either value and provid-
+ing STOKE with a double-precision target corresponds to asking
+STOKE to produce a single- or half-precision version of a double-
+precision algorithm.
+By increasing η, STOKE is able to experiment with modifi-
+cations to the code which meet the desired bounds on precision.
+The result is a set of implementations that interpolate between dou-
+ble, single-, half-precision and beyond. For very large η, STOKE
+is able to remove nearly all instructions (for η = ULLONG MAX,
+not shown, STOKE produces the empty rewrite), and produce
+speedups of up to 6x over the original implementations. How-
+ever performance improvements grow smoothly and are still sig-
+nificant for reasonable precisions. Although no longer available,
+Intel at one point offered a variable-precision implementation of
+libimf, which allowed the user to trade performance for higher
+quality results. Using only the full double-precision implemen-
+tation, STOKE is effectively able to automatically generate the
+equivalent library.
+Two factors complicate the verification of the rewrites discov-
+ered by STOKE for libimf: code length and the mixture of fixed-
+and floating-point computation. At over 100 instructions in length,
+verifying a rewrite against the kernels in libimf is well beyond
+the capabilities of current floating-point decision procedures. Addi-
+tionally, the kernels in libimf use hardware-dependent bit-wise
+arithmetic to extract the fields from a floating-point value for use as
+indices into a table of constants. Although an abstract interpretation
+based on ranges might be able to deal with the primarily polynomial
+operations of those kernels, without an appropriate set of invariants
+for the values contained in those tables, any sound results of the
+analysis would be uselessly imprecise.
+6.2
+// gcc -O3:
+return V(99*(v1.x*(r1-0.5))+99*(v2.x*(r2-0.5)),
+99*(v1.y*(r1-0.5))+99*(v2.y*(r2-0.5)),
+99*(v1.z*(r1-.05))+99*(v2.z*(r2-0.5)));
+// STOKE:
+return V(99*(v1.x*(r1-0.5)),
+99*(v1.y*(r1-0.5)),
+v2.z*(99*(r2-0.5)));
+# STOKE
+S3D
+S3D is a three dimensional direct numeric simulation solver for
+HCCI combustion. It is one of the primary applications used by
+the U.S Department of Energy for investigating combustion mech-
+anisms as potential replacements for gasoline-based engines. S3D
+is designed to scale on large supercomputers and relies on a sig-
+nificant amount of parallelism to achieve high performance. Com-
+putation in S3D is split into parallel and sequential phases known
+as tasks. Despite the enormous amounts of data that these tasks
+consume, they are orchestrated in such a way that the time spent
+in inter-node data communication between tasks is kept to a min-
+imum. In fact for some kernels, this orchestration is so effective
+that the resulting runtimes have been made compute bound. As a
+result, substantial performance gains can be made by optimizing
+these computations.
+We applied our implementation of STOKE to a CPU imple-
+mentation of S3D. Specifically, we considered the diffusion task
+which computes coefficients based on temperature, pressure, and
+molar-mass fractions of various chemical species, and is represen-
+tative of many high-performance numerical simulations in that its
+compute time is dominated by calls to the exp() function. The
+performance of this function is so important that the developers
+ship a hand-coded implementation which approximates the func-
+tion using a Taylor series polynomial and deliberately omits error
+handling for irregular values such as infinity or NaN. As in the pre-
+vious section, Figure 5 shows the result of varying η between 1 and
+10 18 . By decreasing precision, STOKE is able to discover rewrites
+which are both faster and shorter than the original implementa-
+tion. Despite its heavy use of the exp() kernel, the diffusion leaf
+task loses precision elsewhere, and does not require full double-
+precision to maintain correctness. The vertical bar in Figure 5(a)
+shows the maximum precision loss that the diffusion kernel is able
+to tolerate. Using the rewrite discovered when η = 10 7 , which corresponds to a 2x performance improvement for the exp() kernel,
+produces a full leaf task performance improvement of 27%.
+As in the previous section, Figure 5(b) shows the error function
+for each of the 20 rewrites shown in Figure 5(a). For reference, we
+have highlighted the error curve which corresponds to the most ag-
+gressive rewrite that the diffusion leaf task was able to tolerate. The
+functions are well-behaved, and a global maximum of 1, 730, 391
+ULPs is discovered quickly. Bit-shifts, bit-extraction, and kernel
+length prevented the application of current sound symbolic techniques to this example.
+7.
+tion time is a suitable optimization metric. With respect to correct-
+ness, STOKE uses test case data to generate customized optimiza-
+tions which are specialized to user-specified input ranges. These
+optimizations may be incorrect in general, but perfectly acceptable
+given the constraints on inputs described by the user or generated
+by a technique such as [5].
+Related Work
+We are not the first to propose program transformations which sac-
+rifice bit-wise precision in favor of performance. Loop perfora-
+tion dynamically removes loop iterations to balance an efficiency-
+precision trade-off [31]. Given an input distribution, some perfora-
+tions can be statistically guaranteed [22]. However, such guarantees
+are statistically unsound for any other input distribution. Green [2]
+and other systems for performing approximate computation [36] al-
+low a programmer to provide multiple implementations of the same
+algorithm, each of which represent different precision/power trade-
+offs. These compilers emit runtime code which switches between
+implementations based on power consumption. Our approach pro-
+vides a method for generating a range of implementations auto-
+matically instead of relying on an expert to provide them. Program
+synthesis techniques such as [14, 32] are currently inapplicable to
+this task as they rely on decision procedures which do not scale to
+non-trivial floating-point programs.
+Techniques that can be extended to bounding the error of
+floating-point optimizations are not limited to those described in
+Section 4. A method for proving robustness and continuity of pro-
+grams is presented in [4] and a black box testing approach for es-
+tablishing Lipschitz continuity is described in [18]. Unfortunately,
+many high-performance kernels such as exp(·) are not Lipschitz
+continuous, and functions such as tan(·) are not even continuous.
+Thus the applicability to STOKE is limited. Interactive theorem
+provers such as [9] may be applicable to the non-trivial optimiza-
+tions discovered by STOKE, but the result would be far from a
+fully automatic system.
+Random interpretations [23] can provide strong statistical guar-
+antees of program behavior. However, the number of samples re-
+quired to produce these guarantees depends crucially on the par-
+ticular operators used by a program. Unfortunately, bit-extraction
+operators for example, require an intractable number of samples.
+Additional testing infrastructures for floating-point code that have
+no statistical guarantees include [3, 20]. Monte Carlo testing ap-
+proaches for checking numerical stability, which is a concern or-
+thogonal to the correctness of optimizations, include [19, 33, 34].
+MCMC sampling has also been applied to a related program anal-
+ysis task, the generation of test cases which obtain good program
+coverage [28].
+The application of search techniques to the optimization and
+verification of floating-point code has recently attracted consider-
+able attention. A search procedure for producing inputs that max-
+imize the relative error between two floating-point kernels which
+is similar to simulated annealing appears in [5]. A brute-force ap-
+proach to replacing double-precision instructions with their single-
+precision equivalents appears in [21], and a randomized technique
+for producing floating-point narrowing conversions at the source
+code level is discussed in [26]. Both tools preserve semantics as
+written and are incapable of producing the aggresive optimizations
+discovered by STOKE.
+Examples of how unsound compiler optimizations can nega-
+tively affect the stability of numerical algorithms are described
+in [13] and a critique of using execution time for measuring im-
+provement in performance is discussed in [7]. The architecture
+of STOKE addresses both of these concerns. Although it is true
+that different memory layouts can result in inconsistent speedups,
+STOKE produces multiple rewrites by design and hence can pro-
+duce a suitable rewrite for each such layout. For STOKE, execution time is a suitable optimization metric. With respect to correct-
+ness, STOKE uses test case data to generate customized optimiza-
+tions which are specialized to user-specified input ranges. These
+optimizations may be incorrect in general, but perfectly acceptable
+given the constraints on inputs described by the user or generated
+by a technique such as [5].
+Conclusion and Future Work
+We have described a new approach to the optimization of high-
+performance floating-point kernels that is based on random search.
+Floating-point instruction sets have complicated semantics, and our
+technique both eliminates the dependence on expert-written opti-
+mization rules and allows a user to customize the extent to which
+precision is sacrificed in favor of performance. The general purpose
+verification of loop-free kernels containing floating-point computa-
+tions remains a hard problem, and we are unaware of any existing
+systems which can be applied to the verification of all of the opti-
+mizations produced by the prototype implementation of our system.
+To address this limitation, we show a general-purpose randomized
+validation technique which can be used to establish strong evidence
+for the correctness of floating-point programs. Although our tech-
+nique is not applicable to application domains which require formal
+verification, for many high-performance applications it is a large
+improvement over the state of the art, which relies on nothing more
+than confidence in the compiler writer and regression test suites.
+Our system is the first implementation of a stochastic optimizer
+which has been successfully applied to full programs. Our system
+achieves significant speedups on both Intel’s handwritten imple-
+mentation of the C numerics library and full end-to-end perfor-
+mance improvements on a direct numeric simulation solver and a
+ray tracer. Nonetheless, further opportunities for optimization still
+remain, including extensions which allow for optimizations based
+on the reorganization of program-wide data structures.

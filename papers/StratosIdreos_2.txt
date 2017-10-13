@@ -1,0 +1,29 @@
+Database Cracking: Fancy Scan, not Poor Man’s Sort!
+Abstract
+Database Cracking is an appealing approach to adaptive indexing:
+on every range-selection query, the data is partitioned using the sup-
+plied predicates as pivots. The core of database cracking is, thus,
+pivoted partitioning. While pivoted partitioning, like scanning, re-
+quires a single pass through the data it tends to have much higher
+costs due to lower CPU efficiency. In this paper, we conduct an
+in-depth study of the reasons for the low CPU efficiency of pivoted
+partitioning. Based on the findings, we develop an optimized ver-
+sion with significantly higher (single-threaded) CPU efficiency. We
+also develop a number of multi-threaded implementations that are
+effectively bound by memory bandwidth. Combining all of these
+optimizations we achieve an implementation that has costs close to
+or better than an ordinary scan on a variety of systems ranging from
+low-end (cheaper than $300) desktop machines to high-end (above
+$60,000) servers.
+CONCLUSION
+CPU-efficient implementation of even simple algorithms is hard:
+while common knowledge in many fields of computer science, this
+insight is still not properly appreciated in the field of data man-
+agement. In this paper, we conducted an in-depth study of such
+a supposedly simple algorithm: pivoted partitioning. We demon-
+strated that, in its naïve implementation, it is not an I/O bound al-
+gorithm. Starting from this understanding, we systematically ana-
+lyzed and addressed the dominant cost factors using state-of-the-art
+techniques. The result is an implementation that rivals and some-
+times even outperforms a parallelized scan on a variety of systems.
+In that, it is up to 25 times faster than the initial implementation.
